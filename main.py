@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 from jose import jwt, JWTError
 from datetime import datetime, timezone
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -35,10 +36,13 @@ def verify_token(req: TokenRequest):
             audience=AUDIENCE
         )
 
-        # exp check (extra safety)
+        # expiry check (extra safety)
         if "exp" in payload:
             if datetime.now(timezone.utc).timestamp() > payload["exp"]:
-                raise HTTPException(status_code=401, detail={"valid": False})
+                return JSONResponse(
+                    status_code=401,
+                    content={"valid": False}
+                )
 
         return {
             "valid": True,
@@ -48,4 +52,7 @@ def verify_token(req: TokenRequest):
         }
 
     except JWTError:
-        raise HTTPException(status_code=401, detail={"valid": False})
+        return JSONResponse(
+            status_code=401,
+            content={"valid": False}
+        )
